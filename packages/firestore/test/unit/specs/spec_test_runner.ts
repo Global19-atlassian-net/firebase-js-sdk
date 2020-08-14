@@ -69,7 +69,10 @@ import { JsonObject } from '../../../src/model/object_value';
 import { Mutation } from '../../../src/model/mutation';
 import * as api from '../../../src/protos/firestore_proto_api';
 import { ExistenceFilter } from '../../../src/remote/existence_filter';
-import { RemoteStore } from '../../../src/remote/remote_store';
+import {
+  RemoteStore,
+  fillWritePipeline
+} from '../../../src/remote/remote_store';
 import { mapCodeFromRpcCode } from '../../../src/remote/rpc_error';
 import {
   JsonProtoSerializer,
@@ -289,6 +292,8 @@ abstract class TestRunner {
     await this.persistence.setDatabaseDeletedListener(async () => {
       await this.shutdown();
     });
+
+    await fillWritePipeline(this.remoteStore);
 
     this.started = true;
   }
@@ -710,7 +715,7 @@ abstract class TestRunner {
     this.networkEnabled = false;
     // Make sure to execute all writes that are currently queued. This allows us
     // to assert on the total number of requests sent before shutdown.
-    await this.remoteStore.fillWritePipeline();
+    await fillWritePipeline(this.remoteStore);
     this.persistence.setNetworkEnabled(false);
     await this.remoteStore.disableNetwork();
   }

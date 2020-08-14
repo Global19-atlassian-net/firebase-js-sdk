@@ -55,13 +55,13 @@ import {
   setOfflineComponentProvider,
   setOnlineComponentProvider
 } from './components';
-
 import { DEFAULT_HOST, DEFAULT_SSL } from '../../../lite/src/api/components';
 import { DatabaseInfo } from '../../../src/core/database_info';
 import { AutoId } from '../../../src/util/misc';
 import { User } from '../../../src/auth/user';
 import { CredentialChangeListener } from '../../../src/api/credentials';
 import { logDebug } from '../../../src/util/log';
+import { fillWritePipeline } from '../../../src/remote/remote_store';
 
 const LOG_TAG = 'Firestore';
 
@@ -198,6 +198,8 @@ export function enableIndexedDbPersistence(
   // `getOnlineComponentProvider()`
   const settings = firestoreImpl._getSettings();
 
+  const onlineComponentProvider = new OnlineComponentProvider();
+
   // TODO(firestoreexp): Add forceOwningTab
   return setOfflineComponentProvider(
     firestoreImpl,
@@ -209,7 +211,11 @@ export function enableIndexedDbPersistence(
       forceOwningTab: false
     },
     new IndexedDbOfflineComponentProvider()
-  );
+  )
+    .then(() =>
+      setOnlineComponentProvider(firestoreImpl, new OnlineComponentProvider())
+    )
+    .then(() => fillWritePipeline(onlineComponentProvider.remoteStore));
 }
 
 export function enableMultiTabIndexedDbPersistence(
@@ -238,9 +244,11 @@ export function enableMultiTabIndexedDbPersistence(
       forceOwningTab: false
     },
     offlineComponentProvider
-  ).then(() =>
-    setOnlineComponentProvider(firestoreImpl, onlineComponentProvider)
-  );
+  )
+    .then(() =>
+      setOnlineComponentProvider(firestoreImpl, onlineComponentProvider)
+    )
+    .then(() => fillWritePipeline(onlineComponentProvider.remoteStore));
 }
 
 export function clearIndexedDbPersistence(

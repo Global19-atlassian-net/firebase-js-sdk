@@ -36,6 +36,7 @@ import { ExistenceFilter } from './existence_filter';
 import { RemoteEvent, TargetChange } from './remote_event';
 import { ByteString } from '../util/byte_string';
 import { isDocumentTarget } from '../core/target';
+import { RemoteStore } from './remote_store';
 
 /**
  * Internal representation of the watcher API protocol buffers.
@@ -236,31 +237,13 @@ class TargetState {
   }
 }
 
-/**
- * Interface implemented by RemoteStore to expose target metadata to the
- * WatchChangeAggregator.
- */
-export interface TargetMetadataProvider {
-  /**
-   * Returns the set of remote document keys for the given target ID as of the
-   * last raised snapshot.
-   */
-  getRemoteKeysForTarget(targetId: TargetId): DocumentKeySet;
-
-  /**
-   * Returns the TargetData for an active target ID or 'null' if this target
-   * has become inactive
-   */
-  getTargetDataForTarget(targetId: TargetId): TargetData | null;
-}
-
 const LOG_TAG = 'WatchChangeAggregator';
 
 /**
  * A helper class to accumulate watch changes into a RemoteEvent.
  */
 export class WatchChangeAggregator {
-  constructor(private metadataProvider: TargetMetadataProvider) {}
+  constructor(private remoteStore: RemoteStore) {}
 
   /** The internal state of all tracked targets. */
   private targetStates = new Map<TargetId, TargetState>();
